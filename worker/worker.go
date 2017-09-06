@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -52,6 +51,7 @@ var (
 
 // Start starts the polling and will continue polling util Stop is called.
 var polling bool
+
 func Start(svc *sqs.SQS, h Handler) {
 	polling = true
 	for polling {
@@ -67,18 +67,20 @@ func Start(svc *sqs.SQS, h Handler) {
 
 		resp, err := svc.ReceiveMessage(params)
 		if err != nil {
-			log.Println(err)
+			Log.Error(err)
 			continue
 		}
 		if len(resp.Messages) > 0 {
 			run(svc, h, resp.Messages)
 		}
 	}
+	Log.Debug("worker: Done Polling, shutting down.")
 }
 
 // Stops polling to receive new messages, to enable clean shutdown.
 func Stop() {
 	polling = false
+	Log.Debug("worker: Will Stop Polling after pending events are processed")
 }
 
 // poll launches goroutine per received message and wait for all message to be processed
